@@ -10,16 +10,33 @@ def type2text(typename):
         text = 'true'
     elif typename == 'String':
         text = '""'
+    elif typename == 'void':
+        text = ''
     else:
-        text = f'new {typename.name}({type2text(typename.initargs})'
+        text = f'new {typename.name}('
+        for init in typename.inits:
+            text += f'{typename(init)}, '
+        text += ')'
     return text
 
+class JavaObject(object):
+    name = None
+    static = '' # Lalallal
+    region = 'public'
 
-class JavaAttr(object):
+class JavaAttr(JavaObject):
     def __init__(self, name, typename, static=False):
         self.name = name
         self.type = typename
-        self.static = 'static' if static else ''
+        self.static = 'static ' if static else ''
+        self.value = None
+
+class JavaMehotd(JavaObject):
+    def __init__(self, name, typename, static=False):
+        self.name = name
+        self.returntype = typename
+        self.static = 'static ' if static else ''
+        self.arg_types = []
 
 class JavaClass(object):
 
@@ -27,22 +44,42 @@ class JavaClass(object):
         self.name = name
         self.pkname = pkname
         self.attrs = []
+        self.inits = []
         self.methods = []
         self.imports = []
-        self.initargs = []
+
+    def __str__(self):
+        return self.name
+
+    def __repr__(self):
+        return self.name
+
+    def addAttr(self):
+        pass
+
+    def addMethod(self):
+        pass
 
     def submit(self):
-        code  = f'package {self.pkname};\n\n'
+        code = f'package {self.pkname};\n\n'
         for pkname in self.imports:
             code += f'import {pkname};\n'
         code += f'\npublic class {self.name} {{\n\n'
         for attr in self.attrs:
-            code += f'\tpublic {attr.static} {attr.type} {attr.name};\n'
+            code += f'\tpublic {attr.static}{attr.type} {attr.name};\n'
         code += '\n'
-        code += f'\tpublic {self.name}({type2text(self.initargs)}) {{\n'
+        # code += f'\tpublic {self.name}({type2text(self.inits)}) {{\n'
         for method in self.methods:
-            code += f'\tpublic {attr.static} {attr.type} {attr.name} {{ '
-            code += f'return {text}; '
+            code += f'\tpublic {method.static}{method.returntype} {method.name}('
+            i = 0
+            for arg in method.arg_types:
+                i += 1
+                if i >= len(method.arg_types):
+                    code += f'{arg} p{i}'
+                else:
+                    code += f'{arg} p{i}, '
+            code += ') { '
+            code += f'return {type2text(method.returntype)}; '
             code += '}\n'
         code += '}'
         return code
