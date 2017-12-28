@@ -5,7 +5,7 @@ import test.emm.B;
 
 public class A {
 
-	public void test() {
+	public String test() {
 		return B.a;
 	}
 }

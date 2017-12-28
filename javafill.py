@@ -54,13 +54,21 @@ class JavaClass(object):
     def __repr__(self):
         return self.name
 
-    def addAttr(self):
-        pass
+    def addAttr(self, name, typename, static=False):
+        attr = JavaAttr(name, typename, static)
+        self.attrs.append(attr)
+        return attr
 
-    def addMethod(self):
-        pass
+    def addMethod(self, name, typename, static=False):
+        method = JavaMehotd(name, typename, static)
+        self.methods.append(method)
+        return method
 
     def submit(self):
+        # self.imports.sort()
+        # self.attrs.sort()
+        # self.method.sort()
+
         code = f'package {self.pkname};\n\n'
         for pkname in self.imports:
             code += f'import {pkname};\n'
@@ -68,7 +76,7 @@ class JavaClass(object):
         for attr in self.attrs:
             code += f'\tpublic {attr.static}{attr.type} {attr.name};\n'
         code += '\n'
-        # code += f'\tpublic {self.name}({type2text(self.inits)}) {{\n'
+        code += f'\tpublic {self.name}() {{}}\n'
         for method in self.methods:
             code += f'\tpublic {method.static}{method.returntype} {method.name}('
             i = 0
@@ -99,12 +107,48 @@ def get_imports(source):
     import_pknames = re.findall(r'import (.*);', source)
     return import_pknames
 
+def get_inits(source, name):
+    inits = re.findall(fr'{name}\((.*)\)', source)
+    pass
+
+def get_members(source, name):
+    members = re.findall(fr'{name}\.(.*)[+;\s]', source)
+    attrs = []
+    methods = []
+    for m in members:
+        if m[-1] == ';':
+            m = m[:-1]
+        if m.endswith(')'):
+            try:
+                m = re.match(r'(.*)\(', m).group(1)
+            except Exception as e:
+                print(m)
+                raise e
+            methods.append(m)
+        else:
+            attrs.append(m)
+    return (attrs, methods)
+
 def main():
     fname = sys.argv[1]
     source = open(fname).read()
     source = remove_comment(source)
     source_pkname = get_packagename(source)
     import_pknames = get_imports(source)
+    imports = []
+    for pkname in import_pknames:
+        a = pkname.split('.')
+        classname = a[-1]
+        packagename = '.'.join(a[:-1])
+        c = JavaClass(classname, packagename)
+        (attrs, methods) = get_members(source, classname)
+        for attr in attrs:
+            c.addAttr(attr, 'void')
+        for method in methods:
+            c.addMethod(method, 'void')
+        imports.append(c)
+        print(c.submit())
+        print('\n\n')
 
 if __name__ == '__main__':
     main()
